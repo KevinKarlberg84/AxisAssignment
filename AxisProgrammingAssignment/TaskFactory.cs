@@ -15,8 +15,8 @@ namespace AxisProgrammingAssignment
         // A list of the resources required for this TaskFactory to communicate with, and construct the methods for the API communication and BusinessLogic
         SMHIService api = new SMHIService();
         RootObject baseInfoResponse = new RootObject();
-        List<TempRootObject> percipitationResponse = new List<TempRootObject>();
-        PercepRootObject weatherStationInfoResponse = new PercepRootObject();
+        List<TempRootObject> weatherStationInfoResponse = new List<TempRootObject>();
+        PercepRootObject percipitationResponse = new PercepRootObject();
         /// <summary>
         /// The method used to update the weather information in memory
         /// </summary>
@@ -25,8 +25,8 @@ namespace AxisProgrammingAssignment
         {
             SMHIService api = new SMHIService();
             baseInfoResponse = await api.GetBaseKeyInfoAboutWeatherLocations();
-            percipitationResponse = await api.GetFullListOfTemperatures(baseInfoResponse);
-            weatherStationInfoResponse = await api.GetLundPercipitation(baseInfoResponse);
+            weatherStationInfoResponse = await api.GetFullListOfTemperatures(baseInfoResponse);
+            percipitationResponse = await api.GetLundPercipitation(baseInfoResponse);
         }
         /// <summary>
         /// Calculates the average temperature for all weather stations and returns a double with the answer
@@ -36,16 +36,16 @@ namespace AxisProgrammingAssignment
         {
             int counter = 0;
             double totalTemp = 0;
-            foreach (var valueList in percipitationResponse)
+            foreach (var valueList in weatherStationInfoResponse)
             {
                 if (valueList.value != null)
                 {
-                    foreach (var item2 in valueList.value)
+                    foreach (var value in valueList.value)
                     {
                         counter++;
                         // Since the measurements are listed in a Swedish way with a comma and Visual Studio has an american way with a dot for the double values
                         //, the dot [.] needed to be replaced with a comma [,] to be able to read in the values
-                        totalTemp += double.Parse(item2.value.Replace('.', ','));
+                        totalTemp += double.Parse(value.value.Replace('.', ','));
                     }
 
                 }
@@ -60,11 +60,11 @@ namespace AxisProgrammingAssignment
         public TotalPercipitationModel CalculatePercipitationInLund()
         {
             double rainInMilimeters = 0;
-            foreach (var item in weatherStationInfoResponse.value)
+            foreach (var item in percipitationResponse.value)
             {
                 rainInMilimeters += double.Parse(item.value.Replace('.', ','));
             }
-            return new TotalPercipitationModel(weatherStationInfoResponse.value[0].@ref, weatherStationInfoResponse.value[weatherStationInfoResponse.value.Count - 1].@ref, rainInMilimeters);
+            return new TotalPercipitationModel(percipitationResponse.value[0].@ref, percipitationResponse.value[percipitationResponse.value.Count - 1].@ref, rainInMilimeters);
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace AxisProgrammingAssignment
         public List<WeatherStationModel> GetFullListOfWeatherReports()
         {
             List<WeatherStationModel> weatherStations = new List<WeatherStationModel>();
-            foreach (var item in percipitationResponse)
+            foreach (var item in weatherStationInfoResponse)
             {
                 if (item.value != null)
                 {
