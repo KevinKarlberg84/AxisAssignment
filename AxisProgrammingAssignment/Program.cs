@@ -12,7 +12,7 @@ namespace AxisProgrammingAssignment
 {
     class Program
     {
-        
+        static DateTime lastUpdateTime;
         static void Main(string[] args)
         {
             TaskFactory taskFact = new TaskFactory();
@@ -22,11 +22,17 @@ namespace AxisProgrammingAssignment
         }
         static async void Menue(TaskFactory taskFact)
         {
+
             bool keepRunning = true;
             while (keepRunning)
             {
                 CancellationTokenSource cts = new CancellationTokenSource();
-                taskFact.UpdateWeatherInformation().Wait();
+                // An addition to make sure unecessary calls to the API doesn't happen when no new hour has passed
+                if (DateTime.Now.Hour > lastUpdateTime.Hour + 1 || lastUpdateTime == null)
+                {
+                    lastUpdateTime = DateTime.Now;
+                    taskFact.UpdateWeatherInformation().Wait();
+                }
                 Console.WriteLine("Welcome to Kevins version of the Axis Assignment");
                 Console.WriteLine("Which operation do you wish to see?");
                 Console.WriteLine("[1]: Average temperature for Sweden the last hour");
@@ -51,7 +57,7 @@ namespace AxisProgrammingAssignment
                         keepRunning = false;
                         break;
                     default:
-                        Console.WriteLine("I'm sorry, that was not an acceptable menue choice. Please select a menue option using the numbers 1-4 and pressing enter");
+                        Console.WriteLine("I'm sorry, that was not an acceptable menue choice. Please select a menue option using the numbers 1-4 and press enter");
                         break;
                 }
                 if (keepRunning ==true)
@@ -66,17 +72,22 @@ namespace AxisProgrammingAssignment
         }
         static void ThreadingAllLocations(TaskFactory taskFact, CancellationTokenSource cts)
         {
-            new Thread(() =>
+            new Task(() =>
             {
-                Thread.CurrentThread.IsBackground = true;
-                WriteAllLocationsWithDelay(taskFact, cts.Token).Wait();
-            }).Start();
-            new Thread(() =>
-            {
-                Thread.CurrentThread.IsBackground = true;
-                Console.ReadKey();
-                cts.Cancel();
-            }).Start();
+                new Thread(() =>
+                {
+                    Thread.CurrentThread.IsBackground = true;
+                    WriteAllLocationsWithDelay(taskFact, cts.Token).Wait();
+                }).Start();
+                new Thread(() =>
+                {
+                    Thread.CurrentThread.IsBackground = false;
+                    Console.ReadKey();
+                    cts.Cancel();
+                }).Start();
+
+            });
+            
 
         }
         static async Task WriteAllLocationsWithDelay(TaskFactory taskFact, CancellationToken ct)
