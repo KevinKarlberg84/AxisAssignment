@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace APIConsumer
 {
-    interface IWeatherService
+    public interface IWeatherService
     {
+        Task<RootObject> GetBaseKeyInfoAboutWeatherLocations();
+        Task<List<TempRootObject>> GetFullListOfTemperatures(RootObject obj);
+        Task<PercepRootObject> GetLundPercipitation(RootObject obj);
     }
 }

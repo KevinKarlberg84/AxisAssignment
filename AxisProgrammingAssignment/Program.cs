@@ -15,12 +15,10 @@ namespace AxisProgrammingAssignment
         static DateTime lastUpdateTime;
         static void Main(string[] args)
         {
-            TaskFactory taskFact = new TaskFactory();
-            Menue(taskFact);
-
-           
+            WeatherLogic weather = new WeatherLogic(new SMHIService());
+            Menu(weather);
         }
-        static async void Menue(TaskFactory taskFact)
+        static void Menu(WeatherLogic weather)
         {
 
             bool keepRunning = true;
@@ -31,7 +29,7 @@ namespace AxisProgrammingAssignment
                 if (DateTime.Now.Hour > lastUpdateTime.Hour + 1 || lastUpdateTime == null)
                 {
                     lastUpdateTime = DateTime.Now;
-                    taskFact.UpdateWeatherInformation().Wait();
+                    weather.UpdateWeatherInformation().Wait();
                 }
                 Console.WriteLine("Welcome to Kevins version of the Axis Assignment");
                 Console.WriteLine("Which operation do you wish to see?");
@@ -43,13 +41,13 @@ namespace AxisProgrammingAssignment
                 switch (answer)
                 {
                     case "1":
-                        AverageTemperatureForSweden(taskFact);
+                        AverageTemperatureForSweden(weather);
                         break;
                     case "2":
-                        TotalPercipitationForLund(taskFact);
+                        TotalPercipitationForLund(weather);
                         break;
                     case "3":
-                        ThreadingAllLocations(taskFact, cts);
+                        ThreadingAllLocations(weather, cts);
                         break;
                     case "4":
                         Console.WriteLine("Thank you for using this application. Have a nice day");
@@ -60,39 +58,29 @@ namespace AxisProgrammingAssignment
                         Console.WriteLine("I'm sorry, that was not an acceptable menue choice. Please select a menue option using the numbers 1-4 and press enter");
                         break;
                 }
-                if (keepRunning ==true)
+                if (keepRunning == true)
                 {
                     Console.WriteLine("Returning you to main menue");
                     Thread.Sleep(5000);
                     Console.Clear();
                 }
-               
+
             }
-          
+
         }
-        static void ThreadingAllLocations(TaskFactory taskFact, CancellationTokenSource cts)
+        static void ThreadingAllLocations(WeatherLogic weather, CancellationTokenSource cts)
         {
-            new Task(() =>
+            new Thread(() =>
             {
-                new Thread(() =>
-                {
-                    Thread.CurrentThread.IsBackground = true;
-                    WriteAllLocationsWithDelay(taskFact, cts.Token).Wait();
-                }).Start();
-                new Thread(() =>
-                {
-                    Thread.CurrentThread.IsBackground = false;
-                    Console.ReadKey();
-                    cts.Cancel();
-                }).Start();
-
-            });
-            
-
+                Thread.CurrentThread.IsBackground = true;
+                Console.ReadKey(true);
+                cts.Cancel();
+            }).Start();
+            WriteAllLocationsWithDelay(weather, cts.Token);
         }
-        static async Task WriteAllLocationsWithDelay(TaskFactory taskFact, CancellationToken ct)
+        static void WriteAllLocationsWithDelay(WeatherLogic weather, CancellationToken ct)
         {
-            var weatherStationList = taskFact.GetFullListOfWeatherReports();
+            var weatherStationList = weather.GetFullListOfWeatherReports();
 
             foreach (var weatherStation in weatherStationList)
             {
@@ -100,23 +88,23 @@ namespace AxisProgrammingAssignment
                 Thread.Sleep(100);
                 if (ct.IsCancellationRequested)
                 {
-                    Console.WriteLine("Cancle was requested, returning you to main menue");
+                    Console.WriteLine("Cancel was requested, returning you to main menu");
                     return;
                 }
             }
         }
-        static void TotalPercipitationForLund(TaskFactory taskFact)
+        static void TotalPercipitationForLund(WeatherLogic weather)
         {
-            var lundPercipitationObject = taskFact.CalculatePercipitationInLund();
+            var lundPercipitationObject = weather.CalculatePercipitationInLund();
             Console.WriteLine($"From {lundPercipitationObject.MeasurementStartDate} to {lundPercipitationObject.MeasurementEndDate} a total of {lundPercipitationObject.TotalAmountOfWaterInMilimeters} milimeters of water fell");
         }
-        static void AverageTemperatureForSweden(TaskFactory taskFact)
+        static void AverageTemperatureForSweden(WeatherLogic weather)
         {
-            
-            double avgTemp = taskFact.CalculateAverageTemperature();
+
+            double avgTemp = weather.CalculateAverageTemperature();
             Console.WriteLine($"The average temperature for all measured weather stations in Sweden is currently: {avgTemp}");
         }
-       
-       
+
+
     }
 }

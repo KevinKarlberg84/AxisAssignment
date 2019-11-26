@@ -6,27 +6,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace AxisProgrammingAssignment
 {
-    public delegate int UpdateWeatherInformationHandler(int stationsCounted);
-    class TaskFactory
+    class WeatherLogic
     {
-        public event UpdateWeatherInformationHandler UpdateWeatherInformationTracker;
+        IWeatherService _weatherService;
+        RootObject baseInfoResponse;
+        List<TempRootObject> weatherStationInfoResponse;
+        PercepRootObject percipitationResponse;
+        public WeatherLogic(IWeatherService weatherService)
+        {
+            _weatherService = weatherService;
+            baseInfoResponse = new RootObject();
+            weatherStationInfoResponse = new List<TempRootObject>();
+            percipitationResponse = new PercepRootObject();
+        }
         // A list of the resources required for this TaskFactory to communicate with, and construct the methods for the API communication and BusinessLogic
-        SMHIService api = new SMHIService();
-        RootObject baseInfoResponse = new RootObject();
-        List<TempRootObject> weatherStationInfoResponse = new List<TempRootObject>();
-        PercepRootObject percipitationResponse = new PercepRootObject();
         /// <summary>
         /// The method used to update the weather information in memory
         /// </summary>
         /// <returns></returns>
         public async Task UpdateWeatherInformation()
         {
-            SMHIService api = new SMHIService();
-            baseInfoResponse = await api.GetBaseKeyInfoAboutWeatherLocations();
-            weatherStationInfoResponse = await api.GetFullListOfTemperatures(baseInfoResponse);
-            percipitationResponse = await api.GetLundPercipitation(baseInfoResponse);
+            baseInfoResponse = await _weatherService.GetBaseKeyInfoAboutWeatherLocations();
+            weatherStationInfoResponse = await _weatherService.GetFullListOfTemperatures(baseInfoResponse);
+            percipitationResponse = await _weatherService.GetLundPercipitation(baseInfoResponse);
         }
         /// <summary>
         /// Calculates the average temperature for all weather stations and returns a double with the answer

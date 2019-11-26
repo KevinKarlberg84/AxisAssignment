@@ -9,10 +9,8 @@ using System.Threading.Tasks;
 
 namespace APIConsumer
 {
-    public delegate int UpdateWeatherInformationHandler(int stationsCounted);
-    public class SMHIService
+    public class SMHIService : IWeatherService
     {
-        public event UpdateWeatherInformationHandler UpdateWeatherInformationTracker;
         /// <summary>
         /// Gets the baseline info from SMHI that contains all the individual stations keys for further data requests
         /// </summary>
@@ -44,37 +42,32 @@ namespace APIConsumer
         {
             TempRootObject tempObj = new TempRootObject();
             List<TempRootObject> listTempObj = new List<TempRootObject>();
-            string str = "";
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("https://opendata-download-metobs.smhi.se/api");
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(
-               new MediaTypeWithQualityHeaderValue("application/json"));
-            foreach (var item in obj.station)
+            try
             {
-                if (item.active != false)
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("https://opendata-download-metobs.smhi.se/api");
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(
+                   new MediaTypeWithQualityHeaderValue("application/json"));
+                foreach (var station in obj.station)
                 {
-                    var response = await client.GetAsync($"/api/version/1.0/parameter/1/station/{item.key}/period/latest-hour/data.json");
-                    str = await response.Content.ReadAsStringAsync();
-                    tempObj = JsonConvert.DeserializeObject<TempRootObject>(str);
-                    listTempObj.Add(tempObj);
-                    OnGetFullListOfTemperatures(listTempObj.Count);
+                    if (station.active != false)
+                    {
+                        var response = await client.GetAsync($"/api/version/1.0/parameter/1/station/{station.key}/period/latest-hour/data.json");
+                        var str = await response.Content.ReadAsStringAsync();
+                        tempObj = JsonConvert.DeserializeObject<TempRootObject>(str);
+                        listTempObj.Add(tempObj);
+                    }
+
                 }
-              
+               
+            }
+            catch (Exception)
+            {
+                // This is where i would handle the error, log it or whatever the application would require
+                throw;
             }
             return listTempObj;
-            
-
-            
-        }
-        protected virtual void OnGetFullListOfTemperatures(int stationsCounted)
-        {
-            UpdateWeatherInformationHandler del = UpdateWeatherInformationTracker as UpdateWeatherInformationHandler;
-            stationsCounted++;
-            if (del != null)
-            {
-                del(stationsCounted);
-            }
         }
         /// <summary>
         /// Gets the percipitation for Lund only during the last few months
@@ -83,25 +76,34 @@ namespace APIConsumer
         /// <returns></returns>
         public async Task<PercepRootObject> GetLundPercipitation(RootObject obj)
         {
+
             PercepRootObject tempObj = new PercepRootObject();
-            string str = "";
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("https://opendata-download-metobs.smhi.se/api");
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(
-               new MediaTypeWithQualityHeaderValue("application/json"));
-            foreach (var item in obj.station)
+            try
             {
-                if (item.active != false)
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("https://opendata-download-metobs.smhi.se/api");
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(
+                   new MediaTypeWithQualityHeaderValue("application/json"));
+                foreach (var station in obj.station)
                 {
-                    if (item.name == "Lund")
+                    if (station.active != false)
                     {
-                        var response = await client.GetAsync($"/api/version/1.0/parameter/5/station/{item.key}/period/latest-months/data.json");
-                        str = await response.Content.ReadAsStringAsync();
-                        tempObj = JsonConvert.DeserializeObject<PercepRootObject>(str);
+                        if (station.name == "Lund")
+                        {
+                            var response = await client.GetAsync($"/api/version/1.0/parameter/5/station/{station.key}/period/latest-months/data.json");
+                            var str = await response.Content.ReadAsStringAsync();
+                            tempObj = JsonConvert.DeserializeObject<PercepRootObject>(str);
+                        }
+
                     }
-                   
                 }
+               
+            }
+            catch (Exception)
+            {
+                // This is where i would handle the error, log it or whatever the application would require
+                throw;
             }
             return tempObj;
         }
